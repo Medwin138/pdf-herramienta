@@ -5,13 +5,6 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Marco negro redondeado -->
-    <path
-        android:fillColor="#00000000"
-        android:strokeColor="#000000"
-        android:strokeWidth="10"
-        android:pathData="M0,14 A14,14 0 0 1 14,0 L94,0 A14,14 0 0 1 108,14 L108,94 A14,14 0 0 1 94,108 L14,108 A14,14 0 0 1 0,94 Z" />
-
     <!-- Página blanca con esquina doblada -->
     <path
         android:fillColor="#FFFFFF"
@@ -24,21 +17,11 @@
     <!-- Monograma M (Miller Studio) -->
     <path
         android:fillColor="#004D40"
-        android:pathData="M36,60 L36,30 L42,30 L42,46 L45,46 L45,30 L50,30 L50,60 L45,60 L45,52 L42,52 L42,60 Z" />
+        android:pathData="M40,74 L40,38 L48,38 L48,54 L51,54 L51,38 L57,38 L57,74 L51,74 L51,62 L48,62 L48,74 Z" />
 
-    <!-- Iniciales P -->
+    <!-- Línea de texto sugerida -->
     <path
         android:fillColor="#80CBC4"
-        android:pathData="M36,84 L36,68 L43,68 L43,75 L39,75 L39,84 Z" />
-
-    <!-- Inicial D -->
-    <path
-        android:fillColor="#80CBC4"
-        android:pathData="M47,84 L47,68 L54,68 L54,71 L50,71 L50,81 L54,81 L54,84 Z" />
-
-    <!-- Inicial F -->
-    <path
-        android:fillColor="#80CBC4"
-        android:pathData="M58,84 L58,68 L65,68 L65,71 L61,71 L61,76 L63,76 L63,79 L61,79 L61,84 Z" />
+        android:pathData="M40,82 L65,82 L65,86 L40,86 Z" />
 
 </vector>
