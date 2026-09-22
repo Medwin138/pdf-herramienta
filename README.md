@@ -4,7 +4,7 @@
 
 **Editor, visor y utilidades para PDF en Android**
 
-Versión **v1.0** · Aplicación nativa Android en **Kotlin**
+Versión **v2.0** · Aplicación nativa Android en **Kotlin**
 
 </div>
 
@@ -12,9 +12,9 @@ Versión **v1.0** · Aplicación nativa Android en **Kotlin**
 
 ## 📸 Vista previa
 
-| Menú principal | Editor de PDF | Diálogo de texto |
-|:---:|:---:|:---:|
-| <img src="docs/screenshots/main.png" width="240" alt="Menú principal"/> | <img src="docs/screenshots/editor.png" width="240" alt="Editor de PDF"/> | <img src="docs/screenshots/dialogo.png" width="240" alt="Diálogo de añadir texto"/> |
+| Menú principal | Editor de PDF | Diálogo de texto | Pantalla de carga |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/main.png" width="240" alt="Menú principal"/> | <img src="docs/screenshots/editor.png" width="240" alt="Editor de PDF"/> | <img src="docs/screenshots/dialogo.png" width="240" alt="Diálogo de añadir texto"/> | <img src="docs/screenshots/splash.png" width="240" alt="Pantalla de carga"/> |
 
 ---
 
@@ -33,8 +33,12 @@ Versión **v1.0** · Aplicación nativa Android en **Kotlin**
 - **🧽 Borrar**: pincel blanco para ocultar texto o dibujos existentes.
 - **🔍 Detectar texto**: reconocimiento del texto real del PDF (extraído con PDFBox) — al tocar sobre una palabra se abre automáticamente el diálogo de texto **prellenado con el texto, la fuente y el tamaño detectados**, para reescribirlo igual.
 - **👆 Mover**: arrastra el documento (pan) y haz *pinch-to-zoom* con zoom anclado al punto de la pinza.
-- **🔄 Girar**: rotación del contenido.
-- **↩ Deshacer y 🗑 Limpiar** para controlar las ediciones.
+- **🖐 Navegación libre**: desplázate por **todas las páginas** con scroll vertical; el indicador de página se actualiza automáticamente al cambiar de página.
+- **💛 Resaltar y 〰 subrayar** el contenido con color y subrayado horizontal.
+- **📐 Formas y cajas**: línea, flecha, rectángulo, elipse y caja de texto — arrastra o redimensiona cada elemento.
+- **📚 Librería de firmas**: guarda firmas usadas y colócalas de nuevo al instante, con gestión de la librería (listar, eliminar y vaciar).
+- 🔄 Girar: rotación del contenido.
+- **↩ Deshacer** para controlar las ediciones.
 - **💾 Guardar**: exporta el documento editado a un PDF nuevo en Descargas.
 
 ### ✍️ Firmar
@@ -153,6 +157,16 @@ develop      ●──●──●────────►
                  \  \
 feature/x       ●───●──────► (se integra en develop)
 ```
+
+---
+
+## 👨‍💻 Desarrollador
+
+Proyecto creado y mantenido por **Miller**, desarrollador independiente de aplicaciones Android bajo el sello **Miller Studio**.
+
+- 📱 Especializado en herramientas sencillas, útiles y en español para el día a día.
+- 🎨 Diseño cuidado con atención a los detalles de la interfaz.
+- 🔗 Repositorio del proyecto en [github.com/Medwin138/pdf-herramienta](https://github.com/Medwin138/pdf-herramienta).
 
 ---
 

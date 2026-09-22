@@ -455,7 +455,7 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
-                    Environment.DIRECTORY_DOCUMENTS
+                    Environment.DIRECTORY_DOWNLOADS
                 )
 
                 put(
