@@ -1,10 +1,20 @@
 <div align="center">
 
+<img src="docs/screenshots/app-icon.png" width="110" alt="Logo de PDF Herramienta"/>
+
 # 🗂️ PDF Herramienta
 
 **Editor, visor y utilidades para PDF en Android**
 
 Versión **v2.0** · Aplicación nativa Android en **Kotlin**
+
+<br>
+
+[![Versión](https://img.shields.io/badge/versión-v2.0-D32F2F?style=for-the-badge)](https://github.com/Medwin138/pdf-herramienta/releases)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.3.72-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#-compatibilidad)
+[![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-2E7D32?style=for-the-badge)](LICENSE)
+[![Español](https://img.shields.io/badge/Idioma-Español-1976D2?style=for-the-badge)](#-compatibilidad)
 
 </div>
 
@@ -172,7 +182,9 @@ Proyecto creado y mantenido por **Miller**, desarrollador independiente de aplic
 
 ## 📄 Licencia
 
-Este proyecto es de **uso libre** para fines personales y educativos.
+Publicado bajo la **Licencia MIT** — consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+Este proyecto es de **uso libre** para fines personales, educativos y comerciales.
 
 <p align="center">
   <sub>Hecho con ❤️ para Android · Kotlin · PdfRenderer · PDFBox-for-Android</sub>
