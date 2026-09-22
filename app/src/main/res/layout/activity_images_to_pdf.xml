@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingBottom="12dp">
+
+            <Button
+                android:id="@+id/btnVolver"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="←"
+                android:textSize="22sp" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Imágenes a PDF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:padding="8dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/txtInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="0 imágenes"
+            android:textSize="16sp"
+            android:gravity="center"
+            android:paddingBottom="6dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toca una imagen para quitarla"
+            android:textSize="13sp"
+            android:gravity="center"
+            android:paddingBottom="10dp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingBottom="16dp">
+
+            <LinearLayout
+                android:id="@+id/contenedorMiniaturas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:padding="4dp" />
+
+        </HorizontalScrollView>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tamaño de página"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp" />
+
+        <RadioGroup
+            android:id="@+id/radioTamanos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbSegunImagen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Según la imagen"
+                android:textSize="15sp" />
+
+            <RadioButton
+                android:id="@+id/rbA4Vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="A4 vertical"
+                android:textSize="15sp" />
+
+            <RadioButton
+                android:id="@+id/rbA4Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="A4 horizontal"
+                android:textSize="15sp" />
+
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/btnCrearPdf"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📄 CREAR PDF"
+            android:textSize="17sp" />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@drawable/splash_bg"
+    android:padding="32dp">
+
+    <ImageView
+        android:id="@+id/imgLogo"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="Logo Miller Studio" />
+
+    <TextView
+        android:id="@+id/txtLogo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Miller Studio"
+        android:textColor="#FFFFFF"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.10"
+        android:fontFamily="serif" />
+
+    <TextView
+        android:id="@+id/txtSubLogo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PDF HERRAMIENTA"
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp"
+        android:letterSpacing="0.35"
+        android:layout_marginTop="6dp" />
+
+    <ProgressBar
+        android:id="@+id/progresoCarga"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="#FFFFFF"
+        android:indeterminateTintMode="src_atop" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="Cargando…"
+        android:textColor="#88FFFFFF"
+        android:textSize="13sp" />
+
+</LinearLayout>

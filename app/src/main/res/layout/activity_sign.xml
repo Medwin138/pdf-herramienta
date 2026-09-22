@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp">
+
+        <Button
+            android:id="@+id/btnVolver"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="←"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/txtPagina"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="1 / 1"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:padding="8dp" />
+
+        <Button
+            android:id="@+id/btnGuardar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💾 GUARDAR"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/btnFirmar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✍️ FIRMAR"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnBorrarFirma"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🗑 Borrar firma"
+            android:textSize="15sp" />
+
+    </LinearLayout>
+
+    <com.myproyect.pdfherramienta.SignPlacementView
+        android:id="@+id/visorFirmas"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="4dp">
+
+        <Button
+            android:id="@+id/btnPaginaAnterior"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="◀ Anterior" />
+
+        <Button
+            android:id="@+id/btnPaginaSiguiente"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Siguiente ▶" />
+
+    </LinearLayout>
+
+</LinearLayout>
