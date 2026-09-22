@@ -11,14 +11,30 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="8dp">
+        android:background="#FAFAFA"
+        android:paddingLeft="6dp"
+        android:paddingRight="8dp">
 
         <Button
             android:id="@+id/btnVolver"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:text="←"
+            android:textSize="20sp" />
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="←"
-            android:textSize="22sp" />
+            android:paddingLeft="6dp"
+            android:paddingRight="6dp"
+            android:text="Editor"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#333333" />
 
         <TextView
             android:id="@+id/txtPagina"
@@ -27,122 +43,27 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="1 / 1"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:padding="8dp" />
+            android:textSize="13sp"
+            android:textColor="#666666" />
 
         <Button
             android:id="@+id/btnGuardar"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💾 GUARDAR"
-            android:textSize="15sp" />
+            android:layout_height="38dp"
+            android:minWidth="0dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:background="#E53935"
+            android:textColor="#FFFFFF"
+            android:text="💾 Guardar"
+            android:textSize="13sp" />
 
     </LinearLayout>
 
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp">
-
-        <Button
-            android:id="@+id/btnDibujo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="✏️ Dibujar"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnTexto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="T Texto"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnMover"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="👆 Mover"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnGirar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🔄 Girar"
-            android:textSize="13sp" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp">
-
-        <Button
-            android:id="@+id/btnBorrar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🧽 Borrar"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnDetectar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🔍 Detectar"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnDeshacer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="↩"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btnLimpiar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🗑"
-            android:textSize="13sp" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp">
-
-        <Button
-            android:id="@+id/btnColorRojo"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🔴"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/btnColorAzul"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🔵"
-            android:textSize="18sp" />
-
-        <Button
-            android:id="@+id/btnColorNegro"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚫"
-            android:textSize="18sp" />
-
-    </LinearLayout>
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
 
     <com.myproyect.pdfherramienta.EditorCanvasView
         android:id="@+id/editorCanvas"
@@ -150,24 +71,196 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="4dp">
+        android:orientation="vertical"
+        android:background="#F5F5F5">
 
-        <Button
-            android:id="@+id/btnPaginaAnterior"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="◀ Anterior" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="4dp">
 
-        <Button
-            android:id="@+id/btnPaginaSiguiente"
-            android:layout_width="wrap_content"
+            <Button
+                android:id="@+id/btnDibujo"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="✏️"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnTexto"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="T"
+                android:textSize="19sp"
+                android:textStyle="bold"
+                android:textColor="#333333" />
+
+            <Button
+                android:id="@+id/btnMover"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="✋"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnBorrar"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="🧽"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnResaltar"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="🟡"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnSubrayar"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="〰"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnFormas"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="▭"
+                android:textSize="19sp"
+                android:textColor="#333333" />
+
+            <Button
+                android:id="@+id/btnFirmas"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="✍️"
+                android:textSize="19sp" />
+
+            <Button
+                android:id="@+id/btnDetectar"
+                android:layout_width="40dp"
+                android:layout_height="38dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="🔍"
+                android:textSize="19sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Siguiente ▶" />
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="2dp"
+            android:paddingBottom="4dp">
+
+            <Button
+                android:id="@+id/btnDeshacer"
+                android:layout_width="40dp"
+                android:layout_height="34dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="↩️"
+                android:textSize="17sp" />
+
+            <Button
+                android:id="@+id/btnGirar"
+                android:layout_width="40dp"
+                android:layout_height="34dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:text="🔄"
+                android:textSize="17sp" />
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="22dp"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:background="#DDDDDD" />
+
+            <Button
+                android:id="@+id/btnColorRojo"
+                android:layout_width="34dp"
+                android:layout_height="30dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="#E53935"
+                android:textSize="10sp" />
+
+            <Button
+                android:id="@+id/btnColorAzul"
+                android:layout_width="34dp"
+                android:layout_height="30dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="#1E88E5"
+                android:textSize="10sp" />
+
+            <Button
+                android:id="@+id/btnColorNegro"
+                android:layout_width="34dp"
+                android:layout_height="30dp"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"
+                android:background="#212121"
+                android:textSize="10sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

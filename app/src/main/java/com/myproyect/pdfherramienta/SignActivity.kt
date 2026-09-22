@@ -246,6 +246,11 @@ class SignActivity : AppCompatActivity() {
 
         btnBorrar.text = "Borrar"
 
+        val btnMisFirmas =
+            Button(this)
+
+        btnMisFirmas.text = "Mis firmas"
+
         val btnUsar =
             Button(this)
 
@@ -257,6 +262,7 @@ class SignActivity : AppCompatActivity() {
         btnCancelar.text = "Cancelar"
 
         filaBotones.addView(btnBorrar)
+        filaBotones.addView(btnMisFirmas)
         filaBotones.addView(btnUsar)
         filaBotones.addView(btnCancelar)
 
@@ -290,6 +296,11 @@ class SignActivity : AppCompatActivity() {
             dialogo.dismiss()
         }
 
+        btnMisFirmas.setOnClickListener {
+            dialogo.dismiss()
+            mostrarMisFirmas()
+        }
+
         btnUsar.setOnClickListener {
             if (!pad.tieneFirma()) {
                 mensaje(
@@ -301,12 +312,103 @@ class SignActivity : AppCompatActivity() {
             val firma =
                 pad.generarFirma()
 
+            FirmaGuardada.guardar(
+                this,
+                firma
+            )
+
             dialogo.dismiss()
 
             visor.addSello(firma)
         }
 
         dialogo.show()
+    }
+
+    private fun mostrarMisFirmas() {
+        val guardadas =
+            FirmaGuardada.listar(this)
+
+        if (guardadas.isEmpty()) {
+            mensaje(
+                "Aún no hay firmas guardadas. " +
+                    "Dibuja una con 'Firmar' y " +
+                    "se guardará automáticamente"
+            )
+            return
+        }
+
+        val nombres =
+            guardadas.mapIndexed {
+                i, archivo ->
+                val marca =
+                    archivo.nameWithoutExtension
+                        .removePrefix("firma_")
+                        .take(14)
+                val fecha = try {
+                    java.text.SimpleDateFormat(
+                        "dd/MM HH:mm"
+                    ).format(archivo.lastModified())
+                } catch (e: Exception) {
+                    ""
+                }
+                "${i + 1}. $marca ($fecha)"
+            }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Mis firmas")
+            .setItems(nombres) { _, cual ->
+                val imagen =
+                    FirmaGuardada.cargar(
+                        guardadas[cual]
+                    )
+                if (imagen != null) {
+                    visor.addSello(imagen)
+                    mensaje(
+                        "Firma colocada. Arrastra " +
+                            "para moverla o borrarla"
+                    )
+                } else {
+                    mensaje(
+                        "No se pudo cargar la firma"
+                    )
+                }
+            }
+            .setNegativeButton("Vaciar librería") {
+                _, _ ->
+                confirmarVaciarFirmas()
+            }
+            .show()
+    }
+
+    private fun confirmarVaciarFirmas() {
+        if (
+            FirmaGuardada.listar(this)
+                .isEmpty()
+        ) {
+            mensaje("No hay firmas guardadas")
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Vaciar librería de firmas")
+            .setMessage(
+                "Se eliminarán todas las firmas " +
+                    "guardadas. ¿Continuar?"
+            )
+            .setPositiveButton(
+                "Sí, eliminar"
+            ) { _, _ ->
+                FirmaGuardada.vaciar(this)
+                mensaje(
+                    "Librería de firmas vaciada"
+                )
+            }
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .show()
     }
 
     private fun guardarPdf() {
@@ -464,7 +566,7 @@ class SignActivity : AppCompatActivity() {
 
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
-                    Environment.DIRECTORY_DOCUMENTS
+                    Environment.DIRECTORY_DOWNLOADS
                 )
 
                 put(

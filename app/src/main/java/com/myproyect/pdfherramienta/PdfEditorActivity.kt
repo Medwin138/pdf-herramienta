@@ -18,7 +18,6 @@ import android.view.Gravity
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
@@ -26,6 +25,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 import java.io.File
 import java.io.FileOutputStream
 
@@ -40,15 +40,17 @@ class PdfEditorActivity : AppCompatActivity() {
 
     private lateinit var editor: EditorCanvasView
     private lateinit var txtPagina: TextView
-    private lateinit var btnPaginaAnterior: Button
-    private lateinit var btnPaginaSiguiente: Button
 
+    private var totalPaginas = 0
     private var paginaActual = 0
-    private var indiceActualCargado: Int? = null
     private var guardando = false
+    private var cargando = false
 
     private val anotacionesPorPagina =
         mutableMapOf<Int, MutableList<Anotacion>>()
+
+    private val metricasPorPagina =
+        mutableMapOf<Int, Pair<Int, Int>>()
 
     private val textosPorPagina =
         mutableMapOf<Int, List<TextoReconocido>>()
@@ -64,10 +66,6 @@ class PdfEditorActivity : AppCompatActivity() {
 
         editor = findViewById(R.id.editorCanvas)
         txtPagina = findViewById(R.id.txtPagina)
-        btnPaginaAnterior =
-            findViewById(R.id.btnPaginaAnterior)
-        btnPaginaSiguiente =
-            findViewById(R.id.btnPaginaSiguiente)
 
         val btnVolver =
             findViewById<Button>(R.id.btnVolver)
@@ -87,14 +85,20 @@ class PdfEditorActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btnDetectar)
         val btnDeshacer =
             findViewById<Button>(R.id.btnDeshacer)
-        val btnLimpiar =
-            findViewById<Button>(R.id.btnLimpiar)
         val btnColorRojo =
             findViewById<Button>(R.id.btnColorRojo)
         val btnColorAzul =
             findViewById<Button>(R.id.btnColorAzul)
         val btnColorNegro =
             findViewById<Button>(R.id.btnColorNegro)
+        val btnResaltar =
+            findViewById<Button>(R.id.btnResaltar)
+        val btnSubrayar =
+            findViewById<Button>(R.id.btnSubrayar)
+        val btnFormas =
+            findViewById<Button>(R.id.btnFormas)
+        val btnFirmas =
+            findViewById<Button>(R.id.btnFirmas)
 
         btnVolver.setOnClickListener {
             finish()
@@ -119,7 +123,7 @@ class PdfEditorActivity : AppCompatActivity() {
             editor.setModo(
                 EditorCanvasView.Modo.MOVER
             )
-            mensaje("Modo mover: arrastra el texto o la página")
+            mensaje("Modo mover: arrastra el texto o el documento")
         }
 
         btnGirar.setOnClickListener {
@@ -157,7 +161,9 @@ class PdfEditorActivity : AppCompatActivity() {
             )
         }
 
-        editor.alDetectarTexto = { detectado ->
+        editor.alDetectarTexto = {
+                pagina,
+                detectado ->
             if (detectado == null) {
                 mensaje(
                     "No hay texto reconocible aquí. " +
@@ -175,9 +181,8 @@ class PdfEditorActivity : AppCompatActivity() {
                     )
 
                 val anchoPts =
-                    renderer
-                        ?.openPage(paginaActual)
-                        ?.width
+                    metricasPorPagina[pagina]
+                        ?.first
                         ?: 595
 
                 val tamano =
@@ -207,10 +212,7 @@ class PdfEditorActivity : AppCompatActivity() {
 
         btnDeshacer.setOnClickListener {
             editor.deshacer()
-        }
-
-        btnLimpiar.setOnClickListener {
-            editor.limpiar()
+            sincronizarAnotaciones()
         }
 
         btnColorRojo.setOnClickListener {
@@ -225,20 +227,84 @@ class PdfEditorActivity : AppCompatActivity() {
             editor.setColor(Color.BLACK)
         }
 
-        btnPaginaAnterior.setOnClickListener {
-            cargarPagina(paginaActual - 1)
+        btnResaltar.setOnClickListener {
+            editor.setModo(
+                EditorCanvasView.Modo.RESALTAR
+            )
+            mensaje(
+                "Resaltar: arrastra sobre el " +
+                    "texto para marcarlo en amarillo"
+            )
         }
 
-        btnPaginaSiguiente.setOnClickListener {
-            cargarPagina(paginaActual + 1)
+        btnSubrayar.setOnClickListener {
+            editor.setModo(
+                EditorCanvasView.Modo.SUBRAYAR
+            )
+            mensaje(
+                "Subrayar: traza una línea bajo el texto"
+            )
+        }
+
+        btnFormas.setOnClickListener {
+
+            val nombres =
+                arrayOf(
+                    "Línea",
+                    "Flecha",
+                    "Rectángulo",
+                    "Elipse",
+                    "Caja de texto"
+                )
+
+            val tipos =
+                arrayOf(
+                    EditorCanvasView.TipoForma.LINEA,
+                    EditorCanvasView.TipoForma.FLECHA,
+                    EditorCanvasView.TipoForma.RECTANGULO,
+                    EditorCanvasView.TipoForma.ELIPSE,
+                    EditorCanvasView.TipoForma.CAJA_TEXTO
+                )
+
+            AlertDialog.Builder(this)
+                .setTitle("Forma")
+                .setItems(nombres) { _, cual ->
+                    editor.tipoFormaSeleccionada =
+                        tipos[cual]
+                    editor.setModo(
+                        EditorCanvasView.Modo.FORMAS
+                    )
+                    mensaje(
+                        "Arrastra el dedo para dibujar " +
+                            "la ${nombres[cual].toLowerCase()}"
+                    )
+                }
+                .show()
+        }
+
+editor.alColocarForma = {
+            sincronizarAnotaciones()
+            mensaje(
+                "Forma colocada. Tócala para moverla"
+            )
+        }
+
+        btnFirmas.setOnClickListener {
+            mostrarLibreriaFirmas()
         }
 
         editor.alColocarTexto = {
-
+            sincronizarAnotaciones()
             mensaje(
                 "Texto colocado. En modo mover, " +
                     "arrastra para reposicionarlo"
             )
+        }
+
+        editor.alCambiarPaginaActual = {
+            pagina ->
+            paginaActual = pagina
+            actualizarContador()
         }
 
         val uri = intent.data
@@ -259,8 +325,10 @@ class PdfEditorActivity : AppCompatActivity() {
             )
 
             renderer = PdfRenderer(descriptor!!)
+            totalPaginas = renderer!!.pageCount
+            actualizarContador()
 
-            cargarPagina(0)
+            cargarTodasLasPaginas()
 
         } catch (e: Exception) {
             mensaje("No se pudo abrir el PDF:\n${e.message}")
@@ -268,111 +336,145 @@ class PdfEditorActivity : AppCompatActivity() {
         }
     }
 
-    private fun cargarPagina(indice: Int) {
+    /*
+     * Renderiza todas las páginas en segundo plano
+     * y se las entrega al editor de una sola vez,
+     * tal como el visor trabaja con todo el documento.
+     */
+    private fun cargarTodasLasPaginas() {
+        if (cargando) {
+            return
+        }
+
         val pdf = renderer ?: return
+        cargando = true
 
-        if (
-            indice < 0 ||
-            indice >= pdf.pageCount
-        ) {
-            return
-        }
-
-        indiceActualCargado?.let {
-            anotacionesPorPagina[it] =
-                editor.obtenerAnotaciones()
-                    .toMutableList()
-        }
-
-        val pagina =
-            pdf.openPage(indice)
-
-        val anchoPts =
-            pagina.width
-        val altoPts =
-            pagina.height
-
-        val escala =
-            RESOLUCION.toFloat() /
-                pagina.width.toFloat()
-
-        val alto =
-            (pagina.height * escala).toInt()
-
-        val bitmap =
-            Bitmap.createBitmap(
-                RESOLUCION,
-                alto,
-                Bitmap.Config.ARGB_8888
-            )
-
-        bitmap.eraseColor(Color.WHITE)
-
-        pagina.render(
-            bitmap,
-            null,
-            null,
-            PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-        )
-
-        pagina.close()
-
-        editor.setPagina(
-            bitmap,
-            anotacionesPorPagina[indice]
-                ?: emptyList()
-        )
-
-        editor.setTextosReconocidos(
-            textosPorPagina[indice]
-                ?: emptyList()
-        )
-
-        indiceActualCargado = indice
-        paginaActual = indice
-        actualizarBarra()
-
-        reconocerTextoPagina(
-            indice,
-            anchoPts,
-            altoPts
-        )
-    }
-
-    private fun reconocerTextoPagina(
-        indice: Int,
-        anchoPts: Int,
-        altoPts: Int
-    ) {
-        val archivo = archivoPdf ?: return
-
-        if (textosPorPagina.containsKey(indice)) {
-            return
-        }
+        mensaje("Cargando documento…")
 
         Thread {
 
             try {
 
-                val textos =
-                    TextoReconocimiento.reconocerPagina(
-                        archivo,
-                        indice,
-                        anchoPts,
-                        altoPts,
-                        RESOLUCION
+                val bitmaps =
+                    mutableListOf<Bitmap>()
+
+                for (i in 0 until pdf.pageCount) {
+
+                    val pagina =
+                        pdf.openPage(i)
+
+                    val anchoPts =
+                        pagina.width
+                    val altoPts =
+                        pagina.height
+
+                    metricasPorPagina[i] =
+                        Pair(anchoPts, altoPts)
+
+                    val escala =
+                        RESOLUCION.toFloat() /
+                            anchoPts.toFloat()
+
+                    val alto =
+                        (altoPts * escala).toInt()
+
+                    val bitmap =
+                        Bitmap.createBitmap(
+                            RESOLUCION,
+                            alto,
+                            Bitmap.Config.ARGB_8888
+                        )
+
+                    bitmap.eraseColor(Color.WHITE)
+
+                    pagina.render(
+                        bitmap,
+                        null,
+                        null,
+                        PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
                     )
 
+                    pagina.close()
+
+                    bitmaps.add(bitmap)
+                }
+
                 runOnUiThread {
-                    if (indice == paginaActual) {
-                        editor.setTextosReconocidos(
-                            textos
-                        )
-                    }
-                    textosPorPagina[indice] = textos
+
+                    editor.setPaginas(
+                        bitmaps,
+                        anotacionesPorPagina
+                    )
+
+                    editor.irAPagina(0)
+
+                    mensaje(
+                        "Documento cargado: $totalPaginas " +
+                            "página(s). Desliza para navegar"
+                    )
+
+                    reconocerTodasLasPaginas()
+
+                    cargando = false
                 }
 
             } catch (e: Exception) {
+
+                runOnUiThread {
+
+                    mensaje(
+                        "No se pudo renderizar el PDF:\n" +
+                            e.message
+                    )
+                    cargando = false
+                }
+            }
+
+        }.start()
+    }
+
+    private fun reconocerTodasLasPaginas() {
+        val archivo = archivoPdf ?: return
+
+        Thread {
+
+            try {
+                PDFBoxResourceLoader.init(
+                    applicationContext
+                )
+            } catch (e: Exception) {
+            }
+
+            for (i in 0 until totalPaginas) {
+
+                if (textosPorPagina.containsKey(i)) {
+                    continue
+                }
+
+                val metricas =
+                    metricasPorPagina[i]
+                        ?: continue
+
+                val textos =
+                    try {
+                        TextoReconocimiento.reconocerPagina(
+                            archivo,
+                            i,
+                            metricas.first,
+                            metricas.second,
+                            RESOLUCION
+                        )
+                    } catch (e: Exception) {
+                        emptyList<TextoReconocido>()
+                    }
+
+                runOnUiThread {
+                    textosPorPagina[i] = textos
+                    editor.setTextosReconocidos(
+                        i,
+                        textos
+                    )
+                }
             }
 
         }.start()
@@ -414,16 +516,21 @@ class PdfEditorActivity : AppCompatActivity() {
         return bitmap
     }
 
-    private fun actualizarBarra() {
-        val total = renderer?.pageCount ?: 1
+    private fun actualizarContador() {
+        if (totalPaginas <= 0) {
+            return
+        }
 
         txtPagina.text =
-            "${paginaActual + 1} / $total"
+            "${paginaActual + 1} / $totalPaginas"
+    }
 
-        btnPaginaAnterior.isEnabled =
-            paginaActual > 0
-        btnPaginaSiguiente.isEnabled =
-            paginaActual < total - 1
+    private fun sincronizarAnotaciones() {
+        for (i in 0 until totalPaginas) {
+            anotacionesPorPagina[i] =
+                editor.obtenerAnotaciones(i)
+                    .toMutableList()
+        }
     }
 
     private fun pedirTexto(
@@ -655,7 +762,7 @@ class PdfEditorActivity : AppCompatActivity() {
                     LinearLayout.HORIZONTAL
             }
 
-        val colorSeleccion = intArrayOf(Color.RED)
+        val colorSeleccion = intArrayOf(Color.BLACK)
         val muestras =
             listOf(
                 Pair(
@@ -686,12 +793,15 @@ class PdfEditorActivity : AppCompatActivity() {
 
         muestras.forEach { (nombre, hex) ->
 
+            val densidad =
+                resources.displayMetrics.density
+
             filaColores.addView(
                 Button(this).apply {
 
                     text = nombre
                     setTextColor(hex)
-                    textSize = 13f
+                    textSize = 12f
 
                     setOnClickListener {
                         colorSeleccion[0] = hex
@@ -699,8 +809,9 @@ class PdfEditorActivity : AppCompatActivity() {
                     }
                 },
                 LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    0,
+                    (40 * densidad).toInt(),
+                    1f
                 ).apply {
                     marginEnd = 6
                 }
@@ -904,6 +1015,93 @@ class PdfEditorActivity : AppCompatActivity() {
         }
     }
 
+    private fun mostrarLibreriaFirmas() {
+        val guardadas =
+            FirmaGuardada.listar(this)
+
+        if (guardadas.isEmpty()) {
+            mensaje(
+                "Aún no hay firmas guardadas. " +
+                    "Dibuja una en 'Firmar PDF' y " +
+                    "se guardará automáticamente aquí"
+            )
+            return
+        }
+
+        val nombres =
+            guardadas.mapIndexed {
+                i, archivo ->
+                val marca =
+                    archivo.nameWithoutExtension
+                        .removePrefix("firma_")
+                        .take(14)
+                val fecha = try {
+                    java.text.SimpleDateFormat(
+                        "dd/MM HH:mm"
+                    ).format(archivo.lastModified())
+                } catch (e: Exception) {
+                    ""
+                }
+                "${i + 1}. $marca ($fecha)"
+            }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Mis firmas")
+            .setItems(nombres) { _, cual ->
+                val imagen =
+                    FirmaGuardada.cargar(
+                        guardadas[cual]
+                    )
+                if (imagen != null) {
+                    editor.colocarFirma(imagen)
+                    sincronizarAnotaciones()
+                    mensaje(
+                        "Firma colocada. Tócala " +
+                            "para moverla"
+                    )
+                } else {
+                    mensaje(
+                        "No se pudo cargar la firma"
+                    )
+                }
+            }
+            .setNegativeButton("Vaciar librería") {
+                _, _ ->
+                confirmarVaciarFirmas()
+            }
+            .show()
+    }
+
+    private fun confirmarVaciarFirmas() {
+        if (
+            FirmaGuardada.listar(this)
+                .isEmpty()
+        ) {
+            mensaje("No hay firmas guardadas")
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Vaciar librería de firmas")
+            .setMessage(
+                "Se eliminarán todas las firmas " +
+                    "guardadas. ¿Continuar?"
+            )
+            .setPositiveButton(
+                "Sí, eliminar"
+            ) { _, _ ->
+                FirmaGuardada.vaciar(this)
+                mensaje(
+                    "Librería de firmas vaciada"
+                )
+            }
+            .setNegativeButton(
+                "Cancelar",
+                null
+            )
+            .show()
+    }
+
     private fun guardarPdf() {
         if (guardando) {
             return
@@ -911,11 +1109,7 @@ class PdfEditorActivity : AppCompatActivity() {
 
         guardando = true
 
-        indiceActualCargado?.let {
-            anotacionesPorPagina[it] =
-                editor.obtenerAnotaciones()
-                    .toMutableList()
-        }
+        sincronizarAnotaciones()
 
         Thread {
             try {
@@ -1047,7 +1241,7 @@ class PdfEditorActivity : AppCompatActivity() {
 
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
-                    Environment.DIRECTORY_DOCUMENTS
+                    Environment.DIRECTORY_DOWNLOADS
                 )
 
                 put(
@@ -1179,7 +1373,7 @@ class PdfEditorActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        editor.reciclarPagina()
+        editor.reciclarPaginas()
         renderer?.close()
         descriptor?.close()
         super.onDestroy()
