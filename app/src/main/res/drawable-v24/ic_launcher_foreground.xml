@@ -5,6 +5,13 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
+    <!-- Marco negro redondeado -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="10"
+        android:pathData="M0,14 A14,14 0 0 1 14,0 L94,0 A14,14 0 0 1 108,14 L108,94 A14,14 0 0 1 94,108 L14,108 A14,14 0 0 1 0,94 Z" />
+
     <!-- Página blanca con esquina doblada -->
     <path
         android:fillColor="#FFFFFF"
