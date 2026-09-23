@@ -4,20 +4,15 @@ import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
-import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.text.InputType
-import android.view.Gravity
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -92,13 +87,6 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
         btnCrearPdf.setOnClickListener {
             pedirNombre()
-        }
-
-        val btnVistaPrevia =
-            findViewById<Button>(R.id.btnVistaPrevia)
-
-        btnVistaPrevia.setOnClickListener {
-            previsualizar()
         }
 
         btnTomarFoto.setOnClickListener {
@@ -609,196 +597,6 @@ private fun decodificarImagen(
         return "$nombre.pdf"
     }
 
-    private fun previsualizar() {
-        if (imagenes.isEmpty()) {
-            mensaje("No hay imágenes")
-            return
-        }
-
-        mensaje("Generando vista previa…")
-
-        Thread {
-
-            var renderer: PdfRenderer? = null
-            var descriptor: ParcelFileDescriptor? = null
-
-            try {
-
-                val documento =
-                    construirDocumento(
-                        tamanoSeleccionado()
-                    )
-
-                val archivo =
-                    File(
-                        cacheDir,
-                        "vista_previa.pdf"
-                    )
-
-                FileOutputStream(archivo).use {
-                    documento.writeTo(it)
-                }
-
-                documento.close()
-
-                descriptor =
-                    ParcelFileDescriptor.open(
-                        archivo,
-                        ParcelFileDescriptor.MODE_READ_ONLY
-                    )
-
-                renderer =
-                    PdfRenderer(descriptor)
-
-                val bitmaps =
-                    mutableListOf<Bitmap>()
-
-                for (i in 0 until renderer.pageCount) {
-                    bitmaps.add(
-                        renderPaginaPdf(
-                            renderer,
-                            i
-                        )
-                    )
-                }
-
-                val refresco =
-                    renderer
-                val desc =
-                    descriptor
-
-                runOnUiThread {
-                    mostrarVistaPreviaPdf(
-                        bitmaps,
-                        refresco,
-                        desc,
-                        archivo
-                    )
-                }
-
-            } catch (e: Exception) {
-
-                runOnUiThread {
-                    mensaje(
-                        "No se pudo generar la " +
-                            "vista previa:\n${e.message}"
-                    )
-                }
-
-                renderer?.close()
-                descriptor?.close()
-            }
-
-        }.start()
-    }
-
-    private fun renderPaginaPdf(
-        pdf: PdfRenderer,
-        indice: Int
-    ): Bitmap {
-        val pagina = pdf.openPage(indice)
-
-        val escala =
-            1600f / pagina.width
-
-        val alto =
-            (pagina.height * escala).toInt()
-
-        val bitmap =
-            Bitmap.createBitmap(
-                1600,
-                alto,
-                Bitmap.Config.ARGB_8888
-            )
-
-        bitmap.eraseColor(Color.WHITE)
-
-        pagina.render(
-            bitmap,
-            null,
-            null,
-            PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-        )
-
-        pagina.close()
-
-        return bitmap
-    }
-
-    private fun mostrarVistaPreviaPdf(
-        bitmaps: List<Bitmap>,
-        renderer: PdfRenderer,
-        descriptor: ParcelFileDescriptor,
-        archivo: File
-    ) {
-        val densidad =
-            resources.displayMetrics.density
-
-        val contenedor =
-            LinearLayout(this)
-
-        contenedor.orientation =
-            LinearLayout.VERTICAL
-
-        val preview =
-            EditorCanvasView(this)
-
-        preview.setModo(
-            EditorCanvasView.Modo.MOVER
-        )
-
-        val titulo =
-            TextView(this).apply {
-                text = "Página 1"
-                textSize = 15f
-                gravity = Gravity.CENTER
-                setPadding(0, 8, 0, 8)
-            }
-
-        contenedor.addView(
-            preview,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                (480 * densidad).toInt()
-            )
-        )
-
-        contenedor.addView(
-            titulo,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-
-        val dialogo =
-            AlertDialog.Builder(this)
-                .setTitle("Vista previa del PDF")
-                .setView(contenedor)
-                .setNegativeButton("Cerrar", null)
-                .create()
-
-        dialogo.setCanceledOnTouchOutside(false)
-
-        preview.alCambiarPaginaActual = {
-            pagina ->
-            titulo.text =
-                "Página ${pagina + 1}"
-        }
-
-        dialogo.setOnDismissListener {
-            preview.reciclarPaginas()
-            renderer.close()
-            descriptor.close()
-            archivo.delete()
-        }
-
-        preview.setPaginas(bitmaps, emptyMap())
-        preview.irAPagina(0)
-
-        dialogo.show()
-    }
-
     private fun crearPdf(nombre: String) {
         if (guardando) {
             return
@@ -837,60 +635,54 @@ private fun decodificarImagen(
         tamano: TamanoPagina,
         nombre: String
     ): Uri {
-        val documento =
-            construirDocumento(tamano)
+        val documento = PdfDocument()
 
         try {
+
+            for (uri in imagenes) {
+
+                val bitmap =
+                    decodificarImagen(
+                        uri,
+                        MAX_DIMENCION
+                    )
+
+                val (anchoPagina, altoPagina) =
+                    dimensionesPagina(
+                        tamano,
+                        bitmap
+                    )
+
+                val info =
+                    PdfDocument.PageInfo.Builder(
+                        anchoPagina,
+                        altoPagina,
+                        1
+                    ).create()
+
+                val paginaPdf =
+                    documento.startPage(info)
+
+                val canvas =
+                    paginaPdf.canvas
+
+                dibujarImagenEnPagina(
+                    canvas,
+                    bitmap,
+                    anchoPagina,
+                    altoPagina
+                )
+
+                documento.finishPage(paginaPdf)
+
+                bitmap.recycle()
+            }
 
             return guardarDocumento(documento, nombre)
 
         } finally {
             documento.close()
         }
-    }
-
-    private fun construirDocumento(
-        tamano: TamanoPagina
-    ): PdfDocument {
-        val documento = PdfDocument()
-
-        for (uri in imagenes) {
-
-            val bitmap =
-                decodificarImagen(
-                    uri,
-                    MAX_DIMENCION
-                )
-
-            val (anchoPagina, altoPagina) =
-                dimensionesPagina(
-                    tamano,
-                    bitmap
-                )
-
-            val info =
-                PdfDocument.PageInfo.Builder(
-                    anchoPagina,
-                    altoPagina,
-                    1
-                ).create()
-
-            val paginaPdf =
-                documento.startPage(info)
-
-            dibujarImagenEnPagina(
-                paginaPdf.canvas,
-                bitmap,
-                anchoPagina,
-                altoPagina
-            )
-
-            documento.finishPage(paginaPdf)
-
-            bitmap.recycle()
-        }
-
-        return documento
     }
 
     private fun dimensionesPagina(
