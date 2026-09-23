@@ -6,11 +6,11 @@
 
 **Editor, visor y utilidades para PDF en Android**
 
-Versión **v2.0** · Aplicación nativa Android en **Kotlin**
+Versión **v3.0** · Aplicación nativa Android en **Kotlin**
 
 <br>
 
-[![Versión](https://img.shields.io/badge/versión-v2.0-D32F2F?style=for-the-badge)](https://github.com/Medwin138/pdf-herramienta/releases)
+[![Versión](https://img.shields.io/badge/versión-v3.0-D32F2F?style=for-the-badge)](https://github.com/Medwin138/pdf-herramienta/releases)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.3.72-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Android](https://img.shields.io/badge/Android-6.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#-compatibilidad)
 [![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-2E7D32?style=for-the-badge)](LICENSE)
@@ -25,6 +25,10 @@ Versión **v2.0** · Aplicación nativa Android en **Kotlin**
 | Menú principal | Editor de PDF | Diálogo de texto | Pantalla de carga |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/main.png" width="240" alt="Menú principal"/> | <img src="docs/screenshots/editor.png" width="240" alt="Editor de PDF"/> | <img src="docs/screenshots/dialogo.png" width="240" alt="Diálogo de añadir texto"/> | <img src="docs/screenshots/splash.png" width="240" alt="Pantalla de carga"/> |
+
+| Firmar PDF | Imágenes a PDF | Unir PDF | Vista previa de unión |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/firmar.png" width="240" alt="Firmar PDF"/> | <img src="docs/screenshots/imagenes.png" width="240" alt="Imágenes a PDF"/> | <img src="docs/screenshots/unir.png" width="240" alt="Unir PDF"/> | <img src="docs/screenshots/previa_unir.png" width="240" alt="Vista previa de unión"/> |
 
 ---
 
@@ -47,6 +51,7 @@ Versión **v2.0** · Aplicación nativa Android en **Kotlin**
 - **💛 Resaltar y 〰 subrayar** el contenido con color y subrayado horizontal.
 - **📐 Formas y cajas**: línea, flecha, rectángulo, elipse y caja de texto — arrastra o redimensiona cada elemento.
 - **📚 Librería de firmas**: guarda firmas usadas y colócalas de nuevo al instante, con gestión de la librería (listar, eliminar y vaciar).
+  - La firma colocada se puede **mover con un dedo** y **redimensionar con pellizco** (dos dedos).
 - 🔄 Girar: rotación del contenido.
 - **↩ Deshacer** para controlar las ediciones.
 - **💾 Guardar**: exporta el documento editado a un PDF nuevo en Descargas.
@@ -54,12 +59,18 @@ Versión **v2.0** · Aplicación nativa Android en **Kotlin**
 ### ✍️ Firmar
 - Dibujo de firma manuscrita sobre una pad dedicada.
 - **Colocación de la firma** sobre el documento con arrastre y redimensionado con uno o dos dedos, y zoom anclado integrado.
+- **Visor de todas las páginas**: el documento se abre en un visor con **navegación libre** (desplázate por todas las páginas con scroll vertical) y el indicador de página se actualiza automáticamente.
+- Coloca tantas firmas como quieras en cualquier página, **borra** la seleccionada y guarda el PDF firmado directamente en Descargas.
 
 ### 🖼️ Imágenes a PDF
 - Convierte una o varias imágenes en un documento PDF de forma rápida.
+- **Añade de la galería** en bloque o **toma una foto con la cámara** para incluirla al instante.
+- **Vista previa en grande** al tocar cada miniatura, y opción de **quitar** imágenes antes de crear el PDF.
+- Elige el tamaño de página (según la imagen, A4 vertical u horizontal).
 
 ### 🔗 Unir PDF
-- Combina varios documentos PDF en uno solo, en el orden seleccionado.
+- Combina **2 o 3 documentos PDF** en uno solo, en el orden seleccionado.
+- **Vista previa en vivo** del resultado (todas las páginas, en orden) con el comportamiento del visor de PDF antes de guardar.
 
 ---
 
@@ -133,11 +144,10 @@ PDFHerramienta/
 │   │   │   ├── PdfViewerActivity.kt     # Visor de PDF
 │   │   │   ├── PdfEditorActivity.kt     # Editor de PDF
 │   │   │   ├── EditorCanvasView.kt      # Lienzo del editor (modos, zoom, texto)
-│   │   │   ├── SignActivity.kt          # Firmar documentos
-│   │   │   ├── SignPlacementView.kt     # Colocación de firma sobre el documento
+│   │   │   ├── SignActivity.kt          # Firmar documentos (visor con EditorCanvasView)
 │   │   │   ├── SignaturePadView.kt      # Pad de firma manuscrita
-│   │   │   ├── ImagesToPdfActivity.kt   # Imágenes a PDF
-│   │   │   ├── MergePdfActivity.kt      # Unir PDF
+│   │   │   ├── ImagesToPdfActivity.kt   # Imágenes a PDF (galería y cámara)
+│   │   │   ├── MergePdfActivity.kt      # Unir PDF (hasta 3, con vista previa)
 │   │   │   ├── TextoReconocimiento.kt   # Extracción de texto con PDFBox
 │   │   │   └── SplashActivity.kt        # Pantalla de inicio
 │   │   ├── res/layout/                  # Interfaces de usuario

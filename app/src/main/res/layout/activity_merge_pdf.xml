@@ -44,7 +44,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="El orden de la lista es el orden de las páginas. Toca un archivo para quitarlo."
+        android:text="Selecciona 2 o 3 PDFs. El orden de la lista es el orden de las páginas. Toca un archivo para quitarlo."
         android:textSize="13sp"
         android:gravity="center"
         android:paddingBottom="10dp" />
@@ -62,6 +62,35 @@
             android:padding="8dp" />
 
     </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp">
+
+        <Button
+            android:id="@+id/btnAgregarPdf"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="➕ Añadir PDF"
+            android:textSize="15sp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnVistaPrevia"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="👁 Vista previa"
+            android:textSize="15sp"
+            android:layout_marginStart="4dp" />
+
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnUnir"

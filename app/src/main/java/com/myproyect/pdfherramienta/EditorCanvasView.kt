@@ -16,6 +16,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 interface Anotacion {
     fun dibujar(canvas: Canvas)
@@ -554,6 +555,11 @@ class EditorCanvasView(
         Anotacion? = null
     private var formaPagina = 0
 
+    private var imagenAnchoInicio = 1f
+    private var imagenCentroInicioX = 0f
+    private var imagenCentroInicioY = 0f
+    private var distanciaInicioImagen = 1f
+
     private val detectorZoom =
         ScaleGestureDetector(
             context,
@@ -563,6 +569,13 @@ class EditorCanvasView(
                 override fun onScaleBegin(
                     detector: ScaleGestureDetector
                 ): Boolean {
+                    if (
+                        modo == Modo.MOVER &&
+                        anotacionSeleccionada()
+                            is ImagenAnotacion
+                    ) {
+                        return false
+                    }
                     parent.requestDisallowInterceptTouchEvent(
                         true
                     )
@@ -737,9 +750,11 @@ class EditorCanvasView(
         )
     }
 
-    fun colocarFirma(imagen: Bitmap) {
+    fun colocarFirma(
+        imagen: Bitmap
+    ): Pair<Int, Int> {
         if (paginas.isEmpty()) {
-            return
+            return Pair(-1, -1)
         }
 
         val pagina = paginaActualVisible()
@@ -759,20 +774,27 @@ class EditorCanvasView(
 
         capturarHistorial()
 
-        anotacionesPorPagina
-            .getOrPut(pagina) {
-                mutableListOf()
-            }
-            .add(
-                ImagenAnotacion(
-                    imagen,
-                    x,
-                    y,
-                    ancho
-                )
+        val lista =
+            anotacionesPorPagina
+                .getOrPut(pagina) {
+                    mutableListOf()
+                }
+
+        lista.add(
+            ImagenAnotacion(
+                imagen,
+                x,
+                y,
+                ancho
             )
+        )
 
         invalidate()
+
+        return Pair(
+            pagina,
+            lista.size - 1
+        )
     }
 
     fun setModo(modo: Modo) {
@@ -1401,6 +1423,7 @@ class EditorCanvasView(
 
                 ultimoX = event.x
                 ultimoY = event.y
+                distanciaInicioImagen = 0f
 
                 when (modo) {
 
@@ -1572,7 +1595,23 @@ class EditorCanvasView(
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
-                if (event.pointerCount >= 2) {
+                val anotacion =
+                    anotacionSeleccionada()
+                if (
+                    modo == Modo.MOVER &&
+                    event.pointerCount == 2 &&
+                    anotacion is ImagenAnotacion
+                ) {
+                    imagenAnchoInicio = anotacion.ancho
+                    imagenCentroInicioX =
+                        anotacion.x +
+                            anotacion.ancho / 2f
+                    imagenCentroInicioY =
+                        anotacion.y +
+                            anotacion.alto / 2f
+                    distanciaInicioImagen =
+                        distancia(event)
+                } else if (event.pointerCount >= 2) {
                     paginaTrazoActual.clear()
                     parent.requestDisallowInterceptTouchEvent(
                         true
@@ -1681,10 +1720,40 @@ class EditorCanvasView(
                                 invalidate()
                             }
                             is ImagenAnotacion -> {
-                                anotacion.mover(
-                                    deltaDocX,
-                                    deltaDocY
-                                )
+                                if (
+                                    event.pointerCount == 2 &&
+                                    distanciaInicioImagen > 0f
+                                ) {
+                                    val nuevoAncho =
+                                        (
+                                            imagenAnchoInicio *
+                                                distancia(event) /
+                                                distanciaInicioImagen
+                                            ).coerceIn(
+                                            30f,
+                                            anchoPagina(
+                                                paginaSeleccionada
+                                            ).coerceAtLeast(30f)
+                                        )
+
+                                    anotacion.x =
+                                        imagenCentroInicioX -
+                                            nuevoAncho / 2f
+                                    anotacion.y =
+                                        imagenCentroInicioY -
+                                            (nuevoAncho *
+                                                anotacion.imagen.height /
+                                                anotacion.imagen.width) /
+                                            2f
+                                    anotacion.ancho =
+                                        nuevoAncho
+                                } else {
+                                    anotacion.mover(
+                                        deltaDocX,
+                                        deltaDocY
+                                    )
+                                }
+
                                 ajustarImagenEnPagina(
                                     anotacion,
                                     paginaSeleccionada
@@ -1720,6 +1789,8 @@ class EditorCanvasView(
             }
 
             MotionEvent.ACTION_UP -> {
+
+                distanciaInicioImagen = 0f
 
                 if (
                     detectorZoom.isInProgress
@@ -1779,6 +1850,7 @@ class EditorCanvasView(
 
             MotionEvent.ACTION_CANCEL -> {
                 paginaTrazoActual.clear()
+                distanciaInicioImagen = 0f
                 parent.requestDisallowInterceptTouchEvent(
                     false
                 )
@@ -1796,6 +1868,61 @@ class EditorCanvasView(
         desplazamientoX += deltaX
         desplazamientoY += deltaY
         restringirDesplazamiento()
+    }
+
+    private fun distancia(
+        event: MotionEvent
+    ): Float {
+        val dx =
+            event.getX(0) -
+                event.getX(1)
+        val dy =
+            event.getY(0) -
+                event.getY(1)
+
+        return sqrt(
+            dx * dx + dy * dy
+        )
+    }
+
+    fun haySeleccion(): Boolean {
+        return indiceSeleccionado >= 0
+    }
+
+    fun eliminarAnotacion(
+        pagina: Int,
+        indice: Int
+    ) {
+        val lista =
+            anotacionesPorPagina[pagina]
+                ?: return
+
+        if (
+            indice in lista.indices &&
+            lista[indice] is ImagenAnotacion
+        ) {
+            capturarHistorial()
+            lista.removeAt(indice)
+            indiceSeleccionado = -1
+            paginaSeleccionada = -1
+            invalidate()
+        }
+    }
+
+    private fun anotacionSeleccionada(): Anotacion? {
+        if (indiceSeleccionado < 0) {
+            return null
+        }
+
+        val pagina =
+            paginaDeAnotacion(
+                indiceSeleccionado
+            ) ?: return null
+
+        return anotacionesPorPagina[pagina]
+            ?.getOrNull(
+                indiceSeleccionado
+            )
     }
 
     private fun anchoPagina(
