@@ -37,12 +37,17 @@ class ImagesToPdfActivity : AppCompatActivity() {
         const val EXTRA_IMAGENES = "imagenes"
         private const val MAX_DIMENCION = 2048
 
+        private const val SELECCIONAR_MAS_IMAGENES = 200
+        private const val CAPTURAR_FOTO = 201
+
         private const val ANCHO_A4 = 595
         private const val ALTO_A4 = 842
         private const val MARGEN = 24f
     }
 
     private val imagenes = mutableListOf<Uri>()
+
+    private var fotoTemporal: Uri? = null
 
     private lateinit var contenedorMiniaturas: LinearLayout
     private lateinit var txtInfo: TextView
@@ -67,6 +72,10 @@ class ImagesToPdfActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btnVolver)
         val btnCrearPdf =
             findViewById<Button>(R.id.btnCrearPdf)
+        val btnTomarFoto =
+            findViewById<Button>(R.id.btnTomarFoto)
+        val btnAgregarGaleria =
+            findViewById<Button>(R.id.btnAgregarGaleria)
 
         btnVolver.setOnClickListener {
             finish()
@@ -74,6 +83,14 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
         btnCrearPdf.setOnClickListener {
             crearPdf()
+        }
+
+        btnTomarFoto.setOnClickListener {
+            tomarFoto()
+        }
+
+        btnAgregarGaleria.setOnClickListener {
+            elegirMasGaleria()
         }
 
         val uris =
@@ -167,7 +184,7 @@ class ImagesToPdfActivity : AppCompatActivity() {
                 )
 
                 imagen.setOnClickListener {
-                    quitarImagen(index)
+                    mostrarVistaPrevia(index)
                 }
 
                 vistas.add(imagen)
@@ -200,7 +217,233 @@ class ImagesToPdfActivity : AppCompatActivity() {
         }
     }
 
-    private fun decodificarImagen(
+    private fun tomarFoto() {
+        try {
+            val directorio =
+                getExternalFilesDir(
+                    Environment.DIRECTORY_PICTURES
+                ) ?: filesDir
+
+            directorio.mkdirs()
+
+            val archivo =
+                File(
+                    directorio,
+                    "foto_" +
+                        System.currentTimeMillis() +
+                        ".jpg"
+                )
+
+            val uriFoto =
+                FileProvider.getUriForFile(
+                    this,
+                    "$packageName.fileprovider",
+                    archivo
+                )
+
+            fotoTemporal = uriFoto
+
+            val intent =
+                Intent(
+                    MediaStore.ACTION_IMAGE_CAPTURE
+                )
+
+            intent.putExtra(
+                MediaStore.EXTRA_OUTPUT,
+                uriFoto
+            )
+
+            intent.addFlags(
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+
+            startActivityForResult(
+                intent,
+                CAPTURAR_FOTO
+            )
+        } catch (e: Exception) {
+            mensaje("No se pudo abrir la cámara")
+        }
+    }
+
+    private fun elegirMasGaleria() {
+        val intent =
+            Intent(Intent.ACTION_OPEN_DOCUMENT)
+
+        intent.addCategory(
+            Intent.CATEGORY_OPENABLE
+        )
+
+        intent.type = "image/*"
+
+        intent.putExtra(
+            Intent.EXTRA_ALLOW_MULTIPLE,
+            true
+        )
+
+        intent.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+
+        intent.addFlags(
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        )
+
+        startActivityForResult(
+            intent,
+            SELECCIONAR_MAS_IMAGENES
+        )
+    }
+
+    private fun mostrarVistaPrevia(
+        index: Int
+    ) {
+        if (
+            index < 0 ||
+            index >= imagenes.size
+        ) {
+            return
+        }
+
+        val uri = imagenes[index]
+
+        Thread {
+            val completa =
+                try {
+                    decodificarImagen(
+                        uri,
+                        1600
+                    )
+                } catch (e: Exception) {
+                    null
+                }
+
+            runOnUiThread {
+                if (completa == null) {
+                    mensaje(
+                        "No se pudo leer la imagen"
+                    )
+                    return@runOnUiThread
+                }
+
+                val imagen =
+                    ImageView(this)
+
+                imagen.setImageBitmap(completa)
+                imagen.scaleType =
+                    ImageView.ScaleType.FIT_CENTER
+
+                val densidad =
+                    resources.displayMetrics.density
+
+                val relleno =
+                    (12 * densidad).toInt()
+
+                imagen.setPadding(
+                    relleno,
+                    relleno,
+                    relleno,
+                    relleno
+                )
+
+                val dialogo =
+                    AlertDialog.Builder(this)
+                        .setTitle(
+                            "Imagen ${index + 1} " +
+                                "de ${imagenes.size}"
+                        )
+                        .setView(imagen)
+                        .setPositiveButton(
+                            "Quitar"
+                        ) { _, _ ->
+                            quitarImagen(index)
+                        }
+                        .setNegativeButton(
+                            "Cerrar",
+                            null
+                        )
+                        .create()
+
+                dialogo.setOnDismissListener {
+                    if (!completa.isRecycled) {
+                        completa.recycle()
+                    }
+                }
+
+                dialogo.show()
+            }
+        }.start()
+    }
+
+    @Deprecated("Compatible con nuestro SDK")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+        if (
+            requestCode == CAPTURAR_FOTO &&
+            resultCode == RESULT_OK
+        ) {
+            val uri = fotoTemporal
+
+            if (uri != null) {
+                imagenes.add(uri)
+                cargarMiniaturas()
+                actualizarInfo()
+            } else {
+                mensaje("No se recibió la foto")
+            }
+
+            fotoTemporal = null
+            return
+        }
+
+        if (
+            requestCode == SELECCIONAR_MAS_IMAGENES &&
+            resultCode == RESULT_OK
+        ) {
+            val nuevas =
+                mutableListOf<Uri>()
+
+            data?.clipData?.let { clip ->
+                for (
+                    i in 0 until clip.itemCount
+                ) {
+                    clip.getItemAt(i).uri
+                        ?.let { nuevas.add(it) }
+                }
+            }
+
+            data?.data?.let { nuevas.add(it) }
+
+            if (nuevas.isNotEmpty()) {
+
+                for (uri in nuevas) {
+                    try {
+                        contentResolver
+                            .takePersistableUriPermission(
+                                uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                    } catch (ignorado: SecurityException) {
+                    }
+                }
+
+                imagenes.addAll(nuevas)
+                cargarMiniaturas()
+                actualizarInfo()
+            }
+        }
+    }
+
+private fun decodificarImagen(
         uri: Uri,
         dimensionMaxima: Int
     ): Bitmap {
@@ -209,17 +452,20 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
         opciones.inJustDecodeBounds = true
 
-        contentResolver
-            .openInputStream(uri)
-            ?.use {
-                BitmapFactory.decodeStream(
-                    it,
-                    null,
-                    opciones
+        val entrada =
+            contentResolver
+                .openInputStream(uri)
+                ?: throw Exception(
+                    "No se pudo leer la imagen"
                 )
-            } ?: throw Exception(
-                "No se pudo leer la imagen"
+
+        entrada.use {
+            BitmapFactory.decodeStream(
+                it,
+                null,
+                opciones
             )
+        }
 
         var ancho = opciones.outWidth
         var alto = opciones.outHeight
@@ -247,15 +493,15 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
         return contentResolver
             .openInputStream(uri)
-            ?.use { entrada ->
+            ?.use { entradaFinal ->
                 BitmapFactory.decodeStream(
-                    entrada,
+                    entradaFinal,
                     null,
                     opcionesFinales
                 )
             } ?: throw Exception(
-                "No se pudo leer la imagen"
-            )
+            "No se pudo leer la imagen"
+        )
     }
 
     private fun crearPdf() {

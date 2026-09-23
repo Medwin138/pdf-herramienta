@@ -1057,7 +1057,8 @@ editor.alColocarForma = {
                     sincronizarAnotaciones()
                     mensaje(
                         "Firma colocada. Tócala " +
-                            "para moverla"
+                            "para moverla o pellizca " +
+                            "para cambiar su tamaño"
                     )
                 } else {
                     mensaje(

@@ -34,17 +34,18 @@ class SignActivity : AppCompatActivity() {
     private var renderer: PdfRenderer? = null
     private var descriptor: ParcelFileDescriptor? = null
 
-    private lateinit var visor: SignPlacementView
+    private lateinit var visor: EditorCanvasView
     private lateinit var txtPagina: TextView
-    private lateinit var btnPaginaAnterior: Button
-    private lateinit var btnPaginaSiguiente: Button
 
+    private var totalPaginas = 0
     private var paginaActual = 0
-    private var indiceActualCargado: Int? = null
     private var guardando = false
+    private var cargando = false
 
-    private val sellosPorPagina =
-        mutableMapOf<Int, MutableList<SelloFirma>>()
+    private var ultimaFirma: Pair<Int, Int>? = null
+
+    private val anotacionesPorPagina =
+        mutableMapOf<Int, MutableList<Anotacion>>()
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -55,10 +56,6 @@ class SignActivity : AppCompatActivity() {
 
         visor = findViewById(R.id.visorFirmas)
         txtPagina = findViewById(R.id.txtPagina)
-        btnPaginaAnterior =
-            findViewById(R.id.btnPaginaAnterior)
-        btnPaginaSiguiente =
-            findViewById(R.id.btnPaginaSiguiente)
 
         val btnVolver =
             findViewById<Button>(R.id.btnVolver)
@@ -68,6 +65,14 @@ class SignActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btnFirmar)
         val btnBorrarFirma =
             findViewById<Button>(R.id.btnBorrarFirma)
+
+        visor.setModo(EditorCanvasView.Modo.MOVER)
+
+        visor.alCambiarPaginaActual = {
+            pagina ->
+            paginaActual = pagina
+            actualizarContador()
+        }
 
         btnVolver.setOnClickListener {
             finish()
@@ -82,22 +87,7 @@ class SignActivity : AppCompatActivity() {
         }
 
         btnBorrarFirma.setOnClickListener {
-            val borrado =
-                visor.borrarSeleccionado()
-
-            if (!borrado) {
-                mensaje(
-                    "No hay firmas que borrar"
-                )
-            }
-        }
-
-        btnPaginaAnterior.setOnClickListener {
-            cargarPagina(paginaActual - 1)
-        }
-
-        btnPaginaSiguiente.setOnClickListener {
-            cargarPagina(paginaActual + 1)
+            borrarFirma()
         }
 
         val uri = intent.data
@@ -117,8 +107,10 @@ class SignActivity : AppCompatActivity() {
             )
 
             renderer = PdfRenderer(descriptor!!)
+            totalPaginas = renderer!!.pageCount
+            actualizarContador()
 
-            cargarPagina(0)
+            cargarTodasLasPaginas()
 
         } catch (e: Exception) {
             mensaje("No se pudo abrir el PDF:\n${e.message}")
@@ -126,31 +118,67 @@ class SignActivity : AppCompatActivity() {
         }
     }
 
-    private fun cargarPagina(indice: Int) {
-        val pdf = renderer ?: return
-
-        if (
-            indice < 0 ||
-            indice >= pdf.pageCount
-        ) {
+    /*
+     * Renderiza todas las páginas y las entrega
+     * de una sola vez para navegar con desplazamiento
+     * libre, igual que el visor.
+     */
+    private fun cargarTodasLasPaginas() {
+        if (cargando) {
             return
         }
 
-        indiceActualCargado?.let {
-            sellosPorPagina[it] =
-                visor.obtenerSellos()
-                    .toMutableList()
-        }
+        val pdf = renderer ?: return
+        cargando = true
 
-        visor.setPagina(
-            renderPagina(indice),
-            sellosPorPagina[indice]
-                ?: emptyList()
-        )
+        mensaje("Cargando documento…")
 
-        indiceActualCargado = indice
-        paginaActual = indice
-        actualizarBarra()
+        Thread {
+
+            try {
+
+                val bitmaps =
+                    mutableListOf<Bitmap>()
+
+                for (i in 0 until pdf.pageCount) {
+                    bitmaps.add(
+                        renderPagina(i)
+                    )
+                }
+
+                runOnUiThread {
+
+                    visor.setPaginas(
+                        bitmaps,
+                        anotacionesPorPagina
+                    )
+
+                    visor.irAPagina(0)
+                    paginaActual = 0
+                    actualizarContador()
+
+                    mensaje(
+                        "Desliza para navegar entre " +
+                            "las páginas. 'Firmar' para " +
+                            "colocar tu firma"
+                    )
+
+                    cargando = false
+                }
+
+            } catch (e: Exception) {
+
+                runOnUiThread {
+
+                    mensaje(
+                        "No se pudo renderizar el PDF:\n" +
+                            e.message
+                    )
+                    cargando = false
+                }
+            }
+
+        }.start()
     }
 
     private fun renderPagina(
@@ -189,16 +217,21 @@ class SignActivity : AppCompatActivity() {
         return bitmap
     }
 
-    private fun actualizarBarra() {
-        val total = renderer?.pageCount ?: 1
+    private fun actualizarContador() {
+        if (totalPaginas <= 0) {
+            return
+        }
 
         txtPagina.text =
-            "${paginaActual + 1} / $total"
+            "${paginaActual + 1} / $totalPaginas"
+    }
 
-        btnPaginaAnterior.isEnabled =
-            paginaActual > 0
-        btnPaginaSiguiente.isEnabled =
-            paginaActual < total - 1
+    private fun sincronizarAnotaciones() {
+        for (i in 0 until totalPaginas) {
+            anotacionesPorPagina[i] =
+                visor.obtenerAnotaciones(i)
+                    .toMutableList()
+        }
     }
 
     private fun mostrarPanelFirma() {
@@ -319,7 +352,15 @@ class SignActivity : AppCompatActivity() {
 
             dialogo.dismiss()
 
-            visor.addSello(firma)
+            ultimaFirma =
+                visor.colocarFirma(firma)
+
+            sincronizarAnotaciones()
+
+            mensaje(
+                "Firma colocada. Arrastra para moverla " +
+                    "y pellizca para cambiar su tamaño"
+            )
         }
 
         dialogo.show()
@@ -363,10 +404,13 @@ class SignActivity : AppCompatActivity() {
                         guardadas[cual]
                     )
                 if (imagen != null) {
-                    visor.addSello(imagen)
+                    ultimaFirma =
+                        visor.colocarFirma(imagen)
+                    sincronizarAnotaciones()
                     mensaje(
                         "Firma colocada. Arrastra " +
-                            "para moverla o borrarla"
+                            "para moverla y pellizca " +
+                            "para cambiar su tamaño"
                     )
                 } else {
                     mensaje(
@@ -411,6 +455,29 @@ class SignActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun borrarFirma() {
+        if (visor.haySeleccion()) {
+            visor.eliminarSeleccionado()
+            ultimaFirma = null
+            mensaje("Firma borrada")
+            return
+        }
+
+        val ultima = ultimaFirma
+
+        if (ultima != null) {
+            visor.eliminarAnotacion(
+                ultima.first,
+                ultima.second
+            )
+            ultimaFirma = null
+            mensaje("Firma borrada")
+            return
+        }
+
+        mensaje("No hay firmas que borrar")
+    }
+
     private fun guardarPdf() {
         if (guardando) {
             return
@@ -418,11 +485,7 @@ class SignActivity : AppCompatActivity() {
 
         guardando = true
 
-        indiceActualCargado?.let {
-            sellosPorPagina[it] =
-                visor.obtenerSellos()
-                    .toMutableList()
-        }
+        sincronizarAnotaciones()
 
         Thread {
             try {
@@ -492,23 +555,30 @@ class SignActivity : AppCompatActivity() {
                 )
 
                 for (
-                    sello
-                    in sellosPorPagina[i]
+                    anotacion
+                    in anotacionesPorPagina[i]
                         ?: mutableListOf()
                 ) {
-                    canvas.drawBitmap(
-                        sello.imagen,
-                        null,
-                        RectF(
-                            sello.x,
-                            sello.y,
-                            sello.x + sello.ancho,
-                            sello.y + sello.alto
-                        ),
-                        Paint(
-                            Paint.FILTER_BITMAP_FLAG
+                    if (
+                        anotacion
+                        is ImagenAnotacion
+                    ) {
+                        canvas.drawBitmap(
+                            anotacion.imagen,
+                            null,
+                            RectF(
+                                anotacion.x,
+                                anotacion.y,
+                                anotacion.x +
+                                    anotacion.ancho,
+                                anotacion.y +
+                                    anotacion.alto
+                            ),
+                            Paint(
+                                Paint.FILTER_BITMAP_FLAG
+                            )
                         )
-                    )
+                    }
                 }
 
                 documento.finishPage(paginaPdf)
@@ -698,7 +768,7 @@ class SignActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        visor.reciclar()
+        visor.reciclarPaginas()
         renderer?.close()
         descriptor?.close()
         super.onDestroy()

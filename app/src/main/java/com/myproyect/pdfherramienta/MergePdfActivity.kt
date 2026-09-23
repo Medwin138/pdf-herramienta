@@ -2,10 +2,14 @@ package com.myproyect.pdfherramienta
 
 import android.content.ContentValues
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.view.Gravity
@@ -26,6 +30,10 @@ class MergePdfActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PDFS = "pdfs"
+
+        private const val LIMITE = 3
+        private const val RESOLUCION = 1600
+        private const val SELECCIONAR_PDFS_MAS = 300
     }
 
     private val pdfs = mutableListOf<Uri>()
@@ -50,6 +58,10 @@ class MergePdfActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btnVolver)
         val btnUnir =
             findViewById<Button>(R.id.btnUnir)
+        val btnAgregarPdf =
+            findViewById<Button>(R.id.btnAgregarPdf)
+        val btnVistaPrevia =
+            findViewById<Button>(R.id.btnVistaPrevia)
 
         btnVolver.setOnClickListener {
             finish()
@@ -57,6 +69,14 @@ class MergePdfActivity : AppCompatActivity() {
 
         btnUnir.setOnClickListener {
             unirPdf()
+        }
+
+        btnAgregarPdf.setOnClickListener {
+            agregarPdfs()
+        }
+
+        btnVistaPrevia.setOnClickListener {
+            mostrarVistaPrevia()
         }
 
         val uris =
@@ -74,6 +94,15 @@ class MergePdfActivity : AppCompatActivity() {
             pdfs.add(Uri.parse(texto))
         }
 
+        if (pdfs.size > LIMITE) {
+            while (pdfs.size > LIMITE) {
+                pdfs.removeAt(pdfs.size - 1)
+            }
+            mensaje(
+                "Solo se admiten $LIMITE PDFs por unión"
+            )
+        }
+
         mostrarLista()
     }
 
@@ -81,7 +110,7 @@ class MergePdfActivity : AppCompatActivity() {
         listaArchivos.removeAllViews()
 
         txtInfo.text =
-            "${pdfs.size} archivos"
+            "${pdfs.size} / $LIMITE archivos"
 
         if (pdfs.isEmpty()) {
             return
@@ -164,6 +193,276 @@ class MergePdfActivity : AppCompatActivity() {
 
         return uri.lastPathSegment
             ?: "PDF ${pdfs.size}"
+    }
+
+    private fun agregarPdfs() {
+        if (pdfs.size >= LIMITE) {
+            mensaje(
+                "Máximo $LIMITE PDFs por unión"
+            )
+            return
+        }
+
+        val intent =
+            Intent(Intent.ACTION_OPEN_DOCUMENT)
+
+        intent.addCategory(
+            Intent.CATEGORY_OPENABLE
+        )
+
+        intent.type = "application/pdf"
+
+        intent.putExtra(
+            Intent.EXTRA_ALLOW_MULTIPLE,
+            true
+        )
+
+        intent.addFlags(
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+
+        intent.addFlags(
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        )
+
+        startActivityForResult(
+            intent,
+            SELECCIONAR_PDFS_MAS
+        )
+    }
+
+    @Deprecated("Compatible con nuestro SDK")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
+
+        if (
+            requestCode == SELECCIONAR_PDFS_MAS &&
+            resultCode == RESULT_OK
+        ) {
+            val nuevos =
+                mutableListOf<Uri>()
+
+            data?.clipData?.let { clip ->
+                for (
+                    i in 0 until clip.itemCount
+                ) {
+                    clip.getItemAt(i).uri
+                        ?.let { nuevos.add(it) }
+                }
+            }
+
+            data?.data?.let { nuevos.add(it) }
+
+            if (nuevos.isNotEmpty()) {
+
+                for (uri in nuevos) {
+                    try {
+                        contentResolver
+                            .takePersistableUriPermission(
+                                uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                    } catch (ignorado: SecurityException) {
+                    }
+                }
+
+                for (uri in nuevos) {
+                    if (pdfs.size >= LIMITE) {
+                        mensaje(
+                            "Máximo $LIMITE PDFs por unión; " +
+                                "los demás se ignoraron"
+                        )
+                        break
+                    }
+                    pdfs.add(uri)
+                }
+
+                mostrarLista()
+            }
+        }
+    }
+
+    private fun mostrarVistaPrevia() {
+        if (pdfs.isEmpty()) {
+            mensaje(
+                "Selecciona al menos un PDF"
+            )
+            return
+        }
+
+        val densidad =
+            resources.displayMetrics.density
+
+        val contenedor =
+            LinearLayout(this)
+
+        contenedor.orientation =
+            LinearLayout.VERTICAL
+
+        val preview =
+            EditorCanvasView(this)
+
+        preview.setModo(
+            EditorCanvasView.Modo.MOVER
+        )
+
+        val titulo =
+            TextView(this).apply {
+                text = "Cargando vista previa…"
+                textSize = 15f
+                gravity = Gravity.CENTER
+                setPadding(0, 8, 0, 8)
+            }
+
+        contenedor.addView(
+            preview,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                (480 * densidad).toInt()
+            )
+        )
+
+        contenedor.addView(
+            titulo,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        val dialogo =
+            AlertDialog.Builder(this)
+                .setTitle("Vista previa (en este orden)")
+                .setView(contenedor)
+                .setNegativeButton("Cerrar", null)
+                .create()
+
+        dialogo.setCanceledOnTouchOutside(false)
+
+        preview.alCambiarPaginaActual = {
+            pagina ->
+            titulo.text =
+                "Página ${pagina + 1}"
+        }
+
+        dialogo.setOnDismissListener {
+            preview.reciclarPaginas()
+        }
+
+        dialogo.show()
+
+        Thread {
+
+            val bitmaps =
+                mutableListOf<Bitmap>()
+
+            try {
+
+                for (
+                    index in pdfs.indices
+                ) {
+                    val archivo =
+                        copiarPdfTemporal(
+                            pdfs[index],
+                            100 + index
+                        )
+
+                    val descriptor =
+                        ParcelFileDescriptor.open(
+                            archivo,
+                            ParcelFileDescriptor.MODE_READ_ONLY
+                        )
+
+                    val pdf =
+                        PdfRenderer(descriptor)
+
+                    for (i in 0 until pdf.pageCount) {
+
+                        val pagina =
+                            pdf.openPage(i)
+
+                        val escala =
+                            RESOLUCION.toFloat() /
+                                pagina.width.toFloat()
+
+                        val alto =
+                            (pagina.height * escala)
+                                .toInt()
+
+                        val bitmap =
+                            Bitmap.createBitmap(
+                                RESOLUCION,
+                                alto,
+                                Bitmap.Config.ARGB_8888
+                            )
+
+                        bitmap.eraseColor(Color.WHITE)
+
+                        pagina.render(
+                            bitmap,
+                            null,
+                            null,
+                            PdfRenderer.Page
+                                .RENDER_MODE_FOR_DISPLAY
+                        )
+
+                        pagina.close()
+
+                        bitmaps.add(bitmap)
+                    }
+
+                    pdf.close()
+                    descriptor.close()
+                    archivo.delete()
+                }
+
+                runOnUiThread {
+
+                    val total =
+                        bitmaps.size
+
+                    preview.setPaginas(
+                        bitmaps,
+                        emptyMap()
+                    )
+
+                    preview.irAPagina(0)
+
+                    titulo.text =
+                        if (total <= 0) {
+                            "Sin páginas"
+                        } else {
+                            "Página 1 de $total. " +
+                                "Desliza para navegar"
+                        }
+                }
+
+            } catch (e: Exception) {
+
+                for (bitmap in bitmaps) {
+                    if (!bitmap.isRecycled) {
+                        bitmap.recycle()
+                    }
+                }
+
+                runOnUiThread {
+                    dialogo.dismiss()
+                    mensaje(
+                        "No se pudo previsualizar:\n" +
+                            e.message
+                    )
+                }
+            }
+
+        }.start()
     }
 
     private fun unirPdf() {
