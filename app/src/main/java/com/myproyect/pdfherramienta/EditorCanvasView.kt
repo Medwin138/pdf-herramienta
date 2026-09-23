@@ -360,24 +360,34 @@ class ImagenAnotacion(
     val imagen: Bitmap,
     var x: Float,
     var y: Float,
-    var ancho: Float
+    var ancho: Float,
+    var rotacion: Float = 0f
 ) : Anotacion, FormaArrastrable {
 
     val alto: Float
         get() = ancho * imagen.height / imagen.width
 
     override fun dibujar(canvas: Canvas) {
+        val mitadAncho = ancho / 2f
+        val mitadAlto = alto / 2f
+        canvas.save()
+        canvas.translate(
+            x + mitadAncho,
+            y + mitadAlto
+        )
+        canvas.rotate(rotacion)
         canvas.drawBitmap(
             imagen,
             null,
             RectF(
-                x,
-                y,
-                x + ancho,
-                y + alto
+                -mitadAncho,
+                -mitadAlto,
+                mitadAncho,
+                mitadAlto
             ),
             pinturaImagen
         )
+        canvas.restore()
     }
 
     override fun contienePunto(
@@ -385,10 +395,22 @@ class ImagenAnotacion(
         yp: Float
     ): Boolean {
         val margen = 12f
-        return xp >= x - margen &&
-            xp <= x + ancho + margen &&
-            yp >= y - margen &&
-            yp <= y + alto + margen
+        val grados =
+            rotacion.toDouble() * Math.PI / 180.0
+        val cos = Math.cos(grados).toFloat()
+        val sin = Math.sin(grados).toFloat()
+        val centroX = x + ancho / 2f
+        val centroY = y + alto / 2f
+        val dx = xp - centroX
+        val dy = yp - centroY
+        val localX = dx * cos + dy * sin
+        val localY = -dx * sin + dy * cos
+        val mitadAncho = ancho / 2f
+        val mitadAlto = alto / 2f
+        return localX >= -mitadAncho - margen &&
+            localX <= mitadAncho + margen &&
+            localY >= -mitadAlto - margen &&
+            localY <= mitadAlto + margen
     }
 
     override fun mover(
@@ -559,6 +581,8 @@ class EditorCanvasView(
     private var imagenCentroInicioX = 0f
     private var imagenCentroInicioY = 0f
     private var distanciaInicioImagen = 1f
+    private var anguloInicioImagen = 0f
+    private var rotacionInicioImagen = 0f
 
     private val detectorZoom =
         ScaleGestureDetector(
@@ -788,6 +812,9 @@ class EditorCanvasView(
                 ancho
             )
         )
+
+        indiceSeleccionado = lista.size - 1
+        paginaSeleccionada = pagina
 
         invalidate()
 
@@ -1273,13 +1300,21 @@ class EditorCanvasView(
 
                     if (
                         j == indiceSeleccionado &&
-                        anotacion is TextoAnotacion &&
                         paginaDeAnotacion(indiceSeleccionado) == i
                     ) {
-                        dibujarSeleccion(
-                            canvas,
-                            anotacion
-                        )
+                        when (anotacion) {
+                            is TextoAnotacion ->
+                                dibujarSeleccion(
+                                    canvas,
+                                    anotacion
+                                )
+                            is ImagenAnotacion ->
+                                dibujarSeleccionImagen(
+                                    canvas,
+                                    anotacion
+                                )
+                            else -> {}
+                        }
                     }
                 }
 
@@ -1324,6 +1359,29 @@ class EditorCanvasView(
         canvas.translate(texto.x, texto.y)
         canvas.rotate(texto.rotacion)
         canvas.drawRect(rect, pinturaSeleccion)
+        canvas.restore()
+    }
+
+    private fun dibujarSeleccionImagen(
+        canvas: Canvas,
+        anotacion: ImagenAnotacion
+    ) {
+        val mitadAncho = anotacion.ancho / 2f
+        val mitadAlto = anotacion.alto / 2f
+        val margen = 6f
+        canvas.save()
+        canvas.translate(
+            anotacion.x + mitadAncho,
+            anotacion.y + mitadAlto
+        )
+        canvas.rotate(anotacion.rotacion)
+        canvas.drawRect(
+            -mitadAncho - margen,
+            -mitadAlto - margen,
+            mitadAncho + margen,
+            mitadAlto + margen,
+            pinturaSeleccion
+        )
         canvas.restore()
     }
 
@@ -1611,6 +1669,10 @@ class EditorCanvasView(
                             anotacion.alto / 2f
                     distanciaInicioImagen =
                         distancia(event)
+                    anguloInicioImagen =
+                        angulo(event)
+                    rotacionInicioImagen =
+                        anotacion.rotacion
                 } else if (event.pointerCount >= 2) {
                     paginaTrazoActual.clear()
                     parent.requestDisallowInterceptTouchEvent(
@@ -1736,6 +1798,14 @@ class EditorCanvasView(
                                             ).coerceAtLeast(30f)
                                         )
 
+                                    anotacion.ancho =
+                                        nuevoAncho
+                                    anotacion.rotacion =
+                                        rotacionInicioImagen +
+                                            (
+                                                angulo(event) -
+                                                    anguloInicioImagen
+                                                )
                                     anotacion.x =
                                         imagenCentroInicioX -
                                             nuevoAncho / 2f
@@ -1745,8 +1815,6 @@ class EditorCanvasView(
                                                 anotacion.imagen.height /
                                                 anotacion.imagen.width) /
                                             2f
-                                    anotacion.ancho =
-                                        nuevoAncho
                                 } else {
                                     anotacion.mover(
                                         deltaDocX,
@@ -1883,6 +1951,23 @@ class EditorCanvasView(
         return sqrt(
             dx * dx + dy * dy
         )
+    }
+
+    private fun angulo(
+        event: MotionEvent
+    ): Float {
+        val dx =
+            event.getX(1) -
+                event.getX(0)
+        val dy =
+            event.getY(1) -
+                event.getY(0)
+        val grados =
+            Math.atan2(
+                dy.toDouble(),
+                dx.toDouble()
+            ) * 180.0 / Math.PI
+        return grados.toFloat()
     }
 
     fun haySeleccion(): Boolean {

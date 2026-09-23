@@ -1108,16 +1108,31 @@ editor.alColocarForma = {
             return
         }
 
+        DialogoGuardarComo.mostrar(
+            this,
+            "documento"
+        ) { nombre ->
+            guardarPdfConNombre(nombre)
+        }
+    }
+
+    private fun guardarPdfConNombre(
+        nombre: String
+    ) {
+        if (guardando) {
+            return
+        }
+
         guardando = true
 
         sincronizarAnotaciones()
 
         Thread {
             try {
-                val uri = crearPdfEditado()
+                val uri = crearPdfEditado(nombre)
 
                 runOnUiThread {
-                    mostrarGuardado(uri)
+                    mostrarGuardado(uri, nombre)
                 }
 
             } catch (e: Exception) {
@@ -1131,7 +1146,9 @@ editor.alColocarForma = {
         }.start()
     }
 
-    private fun crearPdfEditado(): Uri {
+    private fun crearPdfEditado(
+        nombre: String
+    ): Uri {
         val pdf = renderer
             ?: throw Exception("PDF no disponible")
 
@@ -1192,7 +1209,10 @@ editor.alColocarForma = {
                 bitmap.recycle()
             }
 
-            return guardarDocumento(documento)
+            return guardarDocumento(
+                documento,
+                nombre
+            )
 
         } finally {
             documento.close()
@@ -1200,13 +1220,9 @@ editor.alColocarForma = {
     }
 
     private fun guardarDocumento(
-        documento: PdfDocument
+        documento: PdfDocument,
+        nombre: String
     ): Uri {
-        val nombre =
-            "pdf_editado_" +
-                System.currentTimeMillis() +
-                ".pdf"
-
         return if (
             Build.VERSION.SDK_INT >=
             Build.VERSION_CODES.Q
@@ -1311,10 +1327,16 @@ editor.alColocarForma = {
         )
     }
 
-    private fun mostrarGuardado(uri: Uri) {
+    private fun mostrarGuardado(
+        uri: Uri,
+        nombre: String
+    ) {
         AlertDialog.Builder(this)
             .setTitle("PDF editado")
-            .setMessage("El PDF se guardó en la carpeta Descargas.")
+            .setMessage(
+                "El PDF se guardó en Descargas como:\n" +
+                    nombre
+            )
             .setPositiveButton("Compartir") { _, _ ->
                 compartir(uri)
             }
