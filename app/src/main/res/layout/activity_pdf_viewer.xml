@@ -31,11 +31,31 @@
 
     </LinearLayout>
 
-    <com.myproyect.pdfherramienta.EditorCanvasView
-        android:id="@+id/visorPdf"
+    <ScrollView
+        android:id="@+id/scrollVertical"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:background="#EEEEEE">
+
+        <HorizontalScrollView
+            android:id="@+id/scrollHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="false">
+
+            <com.myproyect.pdfherramienta.GlobalZoomDocumentView
+                android:id="@+id/contenedorPaginas"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:padding="8dp" />
+
+        </HorizontalScrollView>
+
+    </ScrollView>
 
     <TextView
         android:id="@+id/txtEstado"

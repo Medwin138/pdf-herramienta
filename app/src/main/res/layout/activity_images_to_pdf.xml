@@ -137,14 +137,6 @@
         </RadioGroup>
 
         <Button
-            android:id="@+id/btnVistaPrevia"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="👁 VISTA PREVIA"
-            android:textSize="17sp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
             android:id="@+id/btnCrearPdf"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
