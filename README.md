@@ -37,6 +37,7 @@ Versión **v3.0** · Aplicación nativa Android en **Kotlin**
 ### 👁️ Visor de PDF
 - Lectura fluida de documentos PDF directamente desde el equipo o desde cualquier proveedor de archivos del sistema.
 - Diseñado para abrir cualquier PDF desde exploradores, correo o gestores de archivos (actividad exportada como visor por defecto).
+- **Un mismo visor en toda la app**: el mismo componente (`EditorCanvasView`) se reutiliza para ver, editar y firmar, y para las **vistas previas** de Unir PDF e Imágenes a PDF, ofreciendo una experiencia de navegación idéntica (scroll libre, pinch-to-zoom anclado e indicador de página) en cada opción del menú.
 
 ### 📝 Editor de PDF
 - **➕ Añadir texto**: escritura libre sobre cualquier punto del documento.
