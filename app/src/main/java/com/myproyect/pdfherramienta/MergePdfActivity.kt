@@ -68,7 +68,23 @@ class MergePdfActivity : AppCompatActivity() {
         }
 
         btnUnir.setOnClickListener {
-            unirPdf()
+            if (guardando) {
+                return@setOnClickListener
+            }
+
+            if (pdfs.size < 2) {
+                mensaje(
+                    "Selecciona al menos 2 PDFs"
+                )
+                return@setOnClickListener
+            }
+
+            DialogoGuardarComo.mostrar(
+                this,
+                "documento"
+            ) { nombre ->
+                unirPdf(nombre)
+            }
         }
 
         btnAgregarPdf.setOnClickListener {
@@ -465,15 +481,10 @@ class MergePdfActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun unirPdf() {
+    private fun unirPdf(
+        nombre: String
+    ) {
         if (guardando) {
-            return
-        }
-
-        if (pdfs.size < 2) {
-            mensaje(
-                "Selecciona al menos 2 PDFs"
-            )
             return
         }
 
@@ -481,10 +492,10 @@ class MergePdfActivity : AppCompatActivity() {
 
         Thread {
             try {
-                val uri = crearPdfUnido()
+                val uri = crearPdfUnido(nombre)
 
                 runOnUiThread {
-                    mostrarGuardado(uri)
+                    mostrarGuardado(uri, nombre)
                 }
 
             } catch (e: Exception) {
@@ -498,7 +509,9 @@ class MergePdfActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun crearPdfUnido(): Uri {
+    private fun crearPdfUnido(
+        nombre: String
+    ): Uri {
         val archivos = mutableListOf<File>()
 
         try {
@@ -521,11 +534,6 @@ class MergePdfActivity : AppCompatActivity() {
                         System.currentTimeMillis() +
                         ".pdf"
                 )
-
-            val nombre =
-                "pdf_unido_" +
-                    System.currentTimeMillis() +
-                    ".pdf"
 
             val merger =
                 PDFMergerUtility()
@@ -696,10 +704,17 @@ class MergePdfActivity : AppCompatActivity() {
         )
     }
 
-    private fun mostrarGuardado(uri: Uri) {
+    private fun mostrarGuardado(
+        uri: Uri,
+        nombre: String
+    ) {
         AlertDialog.Builder(this)
             .setTitle("PDF unido")
-            .setMessage("Los PDFs se unieron y se guardaron en Descargas.")
+            .setMessage(
+                "Los PDFs se unieron y se guardaron en " +
+                    "Descargas como:\n" +
+                    nombre
+            )
             .setPositiveButton("Compartir") { _, _ ->
                 compartir(uri)
             }

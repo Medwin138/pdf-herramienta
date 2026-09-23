@@ -54,13 +54,13 @@ Versión **v3.0** · Aplicación nativa Android en **Kotlin**
   - La firma colocada se puede **mover con un dedo** y **redimensionar con pellizco** (dos dedos).
 - 🔄 Girar: rotación del contenido.
 - **↩ Deshacer** para controlar las ediciones.
-- **💾 Guardar**: exporta el documento editado a un PDF nuevo en Descargas.
+- **💾 Guardar**: exporta el documento editado a un PDF nuevo en Descargas, pidiéndote el nombre con el cuadro **'Guardar como'**.
 
 ### ✍️ Firmar
 - Dibujo de firma manuscrita sobre una pad dedicada.
-- **Colocación de la firma** sobre el documento con arrastre y redimensionado con uno o dos dedos, y zoom anclado integrado.
+- **Colocación de la firma** sobre el documento con arrastre, redimensionado y **giro con dos dedos** (pellizco para cambiar el tamaño y girar para rotarla).
 - **Visor de todas las páginas**: el documento se abre en un visor con **navegación libre** (desplázate por todas las páginas con scroll vertical) y el indicador de página se actualiza automáticamente.
-- Coloca tantas firmas como quieras en cualquier página, **borra** la seleccionada y guarda el PDF firmado directamente en Descargas.
+- Coloca tantas firmas como quieras en cualquier página, **borra** la seleccionada y guarda el PDF firmado directamente en Descargas, pidiéndote el nombre con el cuadro **'Guardar como'**.
 
 ### 🖼️ Imágenes a PDF
 - Convierte una o varias imágenes en un documento PDF de forma rápida.

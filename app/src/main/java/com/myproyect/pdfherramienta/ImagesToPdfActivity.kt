@@ -12,9 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
-import android.text.InputType
 import android.widget.Button
-import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioGroup
@@ -57,8 +55,6 @@ class ImagesToPdfActivity : AppCompatActivity() {
 
     private var guardando = false
 
-    private var dialogoAbierto = false
-
     override fun onCreate(
         savedInstanceState: Bundle?
     ) {
@@ -86,7 +82,21 @@ class ImagesToPdfActivity : AppCompatActivity() {
         }
 
         btnCrearPdf.setOnClickListener {
-            pedirNombre()
+            if (guardando) {
+                return@setOnClickListener
+            }
+
+            if (imagenes.isEmpty()) {
+                mensaje("No hay imágenes")
+                return@setOnClickListener
+            }
+
+            DialogoGuardarComo.mostrar(
+                this,
+                "documento"
+            ) { nombre ->
+                crearPdf(nombre)
+            }
         }
 
         btnTomarFoto.setOnClickListener {
@@ -506,95 +516,6 @@ private fun decodificarImagen(
             } ?: throw Exception(
             "No se pudo leer la imagen"
         )
-    }
-
-    private fun pedirNombre() {
-        if (guardando || dialogoAbierto) {
-            return
-        }
-
-        if (imagenes.isEmpty()) {
-            mensaje("No hay imágenes")
-            return
-        }
-
-        dialogoAbierto = true
-
-        val campo = EditText(this)
-        campo.hint = "Nombre del PDF"
-        campo.setText("documento")
-        campo.inputType =
-            InputType.TYPE_CLASS_TEXT
-        campo.selectAll()
-
-        val densidad =
-            resources.displayMetrics.density
-
-        val margen =
-            (24 * densidad).toInt()
-
-        val parametros =
-            LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-
-        parametros.leftMargin = margen
-        parametros.rightMargin = margen
-
-        campo.layoutParams = parametros
-
-        val dialogo =
-            AlertDialog.Builder(this)
-                .setTitle("Guardar como")
-                .setView(campo)
-                .setPositiveButton("Guardar") { _, _ ->
-                    val nombre =
-                        sanitizarNombre(
-                            campo.text.toString()
-                        )
-
-                    crearPdf(nombre)
-                }
-                .setNegativeButton(
-                    "Cancelar",
-                    null
-                )
-                .create()
-
-        dialogo.setOnDismissListener {
-            dialogoAbierto = false
-        }
-
-        dialogo.show()
-    }
-
-    private fun sanitizarNombre(texto: String): String {
-        var nombre =
-            texto
-                .trim()
-                .replace(
-                    Regex("[\\\\/:*?\"<>|]"),
-                    ""
-                )
-                .trim()
-
-        if (
-            nombre.endsWith(".pdf", ignoreCase = true)
-        ) {
-            nombre =
-                nombre
-                    .substring(0, nombre.length - 4)
-                    .trim()
-        }
-
-        if (nombre.isEmpty()) {
-            nombre =
-                "pdf_imagenes_" +
-                    System.currentTimeMillis()
-        }
-
-        return "$nombre.pdf"
     }
 
     private fun crearPdf(nombre: String) {

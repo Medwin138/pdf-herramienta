@@ -3,6 +3,7 @@ package com.myproyect.pdfherramienta
 import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
@@ -483,19 +484,34 @@ class SignActivity : AppCompatActivity() {
             return
         }
 
+        DialogoGuardarComo.mostrar(
+            this,
+            "documento"
+        ) { nombre ->
+            guardarPdfConNombre(nombre)
+        }
+    }
+
+    private fun guardarPdfConNombre(
+        nombre: String
+    ) {
+        if (guardando) {
+            return
+        }
+
         guardando = true
 
         sincronizarAnotaciones()
 
         Thread {
             try {
-                val uri = crearPdfFirmado()
+                val uri = crearPdfFirmado(nombre)
 
                 runOnUiThread {
-                    mostrarGuardado(uri)
+                    mostrarGuardado(uri, nombre)
                 }
 
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 runOnUiThread {
                     mensaje("Error al guardar:\n${e.message}")
                 }
@@ -506,7 +522,9 @@ class SignActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun crearPdfFirmado(): Uri {
+    private fun crearPdfFirmado(
+        nombre: String
+    ): Uri {
         val pdf = renderer
             ?: throw Exception("PDF no disponible")
 
@@ -563,20 +581,9 @@ class SignActivity : AppCompatActivity() {
                         anotacion
                         is ImagenAnotacion
                     ) {
-                        canvas.drawBitmap(
-                            anotacion.imagen,
-                            null,
-                            RectF(
-                                anotacion.x,
-                                anotacion.y,
-                                anotacion.x +
-                                    anotacion.ancho,
-                                anotacion.y +
-                                    anotacion.alto
-                            ),
-                            Paint(
-                                Paint.FILTER_BITMAP_FLAG
-                            )
+                        guardarImagenRotada(
+                            canvas,
+                            anotacion
                         )
                     }
                 }
@@ -586,21 +593,49 @@ class SignActivity : AppCompatActivity() {
                 bitmap.recycle()
             }
 
-            return guardarDocumento(documento)
+            return guardarDocumento(
+                documento,
+                nombre
+            )
 
         } finally {
             documento.close()
         }
     }
 
-    private fun guardarDocumento(
-        documento: PdfDocument
-    ): Uri {
-        val nombre =
-            "pdf_firmado_" +
-                System.currentTimeMillis() +
-                ".pdf"
+    private fun guardarImagenRotada(
+        canvas: Canvas,
+        anotacion: ImagenAnotacion
+    ) {
+        val mitadAncho =
+            anotacion.ancho / 2f
+        val mitadAlto =
+            anotacion.alto / 2f
 
+        canvas.save()
+        canvas.translate(
+            anotacion.x + mitadAncho,
+            anotacion.y + mitadAlto
+        )
+        canvas.rotate(anotacion.rotacion)
+        canvas.drawBitmap(
+            anotacion.imagen,
+            null,
+            RectF(
+                -mitadAncho,
+                -mitadAlto,
+                mitadAncho,
+                mitadAlto
+            ),
+            Paint(Paint.FILTER_BITMAP_FLAG)
+        )
+        canvas.restore()
+    }
+
+    private fun guardarDocumento(
+        documento: PdfDocument,
+        nombre: String
+    ): Uri {
         return if (
             Build.VERSION.SDK_INT >=
             Build.VERSION_CODES.Q
@@ -705,10 +740,16 @@ class SignActivity : AppCompatActivity() {
         )
     }
 
-    private fun mostrarGuardado(uri: Uri) {
+    private fun mostrarGuardado(
+        uri: Uri,
+        nombre: String
+    ) {
         AlertDialog.Builder(this)
             .setTitle("PDF firmado")
-            .setMessage("El PDF se guardó en la carpeta Descargas.")
+            .setMessage(
+                "El PDF se guardó en Descargas como:\n" +
+                    nombre
+            )
             .setPositiveButton("Compartir") { _, _ ->
                 compartir(uri)
             }
